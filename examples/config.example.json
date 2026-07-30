@@ -1,0 +1,19 @@
+{
+  "bind": "127.0.0.1",
+  "port": 8080,
+  "db_path": "./amp-community.db",
+  "policy_dir": "./policies",
+  "callback": { "mode": "poll" },
+  "tokens": [
+    {
+      "token": "amp_k_test_CHANGE-ME-reviewer",
+      "principal": "alice",
+      "role": "reviewer"
+    },
+    {
+      "token": "amp_k_test_CHANGE-ME-agent",
+      "principal": "agent:invoice-agent",
+      "role": "service"
+    }
+  ]
+}

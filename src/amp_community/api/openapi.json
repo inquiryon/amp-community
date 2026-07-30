@@ -1,0 +1,780 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "AMP Community Edition API",
+    "version": "0.0.1",
+    "description": "Experimental v0 governance API. Contracts may change until stabilized (see amp-core contracts/schemas/v0.json, the source of truth for domain shapes). Authentication: `Authorization: Bearer <token>` against locally configured tokens.",
+    "license": {
+      "name": "Apache-2.0",
+      "identifier": "Apache-2.0"
+    }
+  },
+  "servers": [
+    {
+      "url": "http://127.0.0.1:8080"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "bearer": {
+        "type": "http",
+        "scheme": "bearer"
+      }
+    },
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "required": [
+          "error"
+        ],
+        "properties": {
+          "error": {
+            "type": "object",
+            "required": [
+              "code",
+              "message"
+            ],
+            "properties": {
+              "code": {
+                "type": "string"
+              },
+              "message": {
+                "type": "string"
+              },
+              "details": {
+                "type": "object"
+              }
+            }
+          }
+        }
+      },
+      "Policy": {
+        "type": "object",
+        "required": [
+          "action_governance"
+        ],
+        "properties": {
+          "policy_id": {
+            "type": "string"
+          },
+          "schema_version": {
+            "const": "v0"
+          },
+          "allow_unknown_tools": {
+            "type": "boolean"
+          },
+          "action_governance": {
+            "type": "object"
+          }
+        }
+      },
+      "EvaluationResult": {
+        "type": "object",
+        "required": [
+          "decision",
+          "reason"
+        ],
+        "properties": {
+          "decision": {
+            "enum": [
+              "allow",
+              "deny",
+              "require_human"
+            ]
+          },
+          "reason": {
+            "type": "string"
+          },
+          "triggered_criteria": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "soft_triggered": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "criteria_results": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          }
+        }
+      },
+      "SubmitResult": {
+        "type": "object",
+        "required": [
+          "request_id",
+          "status"
+        ],
+        "properties": {
+          "request_id": {
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "allowed",
+              "denied",
+              "pending_review"
+            ]
+          },
+          "reason": {
+            "type": "string"
+          },
+          "hitl_id": {
+            "type": "string"
+          },
+          "replayed": {
+            "type": "boolean"
+          }
+        }
+      },
+      "Workitem": {
+        "type": "object",
+        "required": [
+          "hitl_id",
+          "request_id",
+          "status"
+        ],
+        "properties": {
+          "hitl_id": {
+            "type": "string"
+          },
+          "request_id": {
+            "type": "string"
+          },
+          "tool": {
+            "type": "string"
+          },
+          "action": {
+            "type": "string"
+          },
+          "params": {
+            "type": "object"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "triggered_criteria": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "status": {
+            "enum": [
+              "pending",
+              "approved",
+              "rejected",
+              "modified",
+              "resumed",
+              "closed",
+              "expired",
+              "cancelled"
+            ]
+          },
+          "requested_by": {
+            "type": "string"
+          },
+          "scope": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "policy_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "created_at": {
+            "type": "string"
+          },
+          "decision": {
+            "type": [
+              "object",
+              "null"
+            ]
+          }
+        }
+      },
+      "ResolveResult": {
+        "type": "object",
+        "required": [
+          "hitl_id",
+          "result",
+          "delivery_id",
+          "delivered"
+        ],
+        "properties": {
+          "hitl_id": {
+            "type": "string"
+          },
+          "result": {
+            "type": "object",
+            "required": [
+              "decision"
+            ],
+            "properties": {
+              "decision": {
+                "enum": [
+                  "approved",
+                  "rejected",
+                  "modified"
+                ]
+              },
+              "params": {
+                "type": [
+                  "object",
+                  "null"
+                ]
+              },
+              "executed": {
+                "type": "boolean"
+              },
+              "follow_up_hitl_id": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            }
+          },
+          "delivery_id": {
+            "type": "string"
+          },
+          "delivered": {
+            "type": "boolean"
+          },
+          "replayed": {
+            "type": "boolean"
+          }
+        }
+      },
+      "RequestStatus": {
+        "type": "object",
+        "required": [
+          "request_id",
+          "status"
+        ],
+        "properties": {
+          "request_id": {
+            "type": "string"
+          },
+          "hitl_id": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "decision": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "executed_params": {
+            "type": [
+              "object",
+              "null"
+            ]
+          },
+          "follow_up_hitl_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
+      "AuditEvent": {
+        "type": "object",
+        "required": [
+          "event_id",
+          "event_type",
+          "occurred_at",
+          "request_id",
+          "actor"
+        ],
+        "properties": {
+          "event_id": {
+            "type": "string"
+          },
+          "event_type": {
+            "type": "string"
+          },
+          "occurred_at": {
+            "type": "string"
+          },
+          "request_id": {
+            "type": "string"
+          },
+          "actor": {
+            "type": "string"
+          },
+          "scope": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "payload": {
+            "type": "object"
+          }
+        }
+      }
+    }
+  },
+  "security": [
+    {
+      "bearer": []
+    }
+  ],
+  "paths": {
+    "/health": {
+      "get": {
+        "security": [],
+        "summary": "Liveness check",
+        "responses": {
+          "200": {
+            "description": "ok"
+          }
+        }
+      }
+    },
+    "/version": {
+      "get": {
+        "security": [],
+        "summary": "Service name, version, contract version",
+        "responses": {
+          "200": {
+            "description": "ok"
+          }
+        }
+      }
+    },
+    "/api/v0/me": {
+      "get": {
+        "summary": "Authenticated principal",
+        "responses": {
+          "200": {
+            "description": "principal id, role, scope"
+          },
+          "401": {
+            "description": "unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v0/policies": {
+      "get": {
+        "summary": "List policy ids",
+        "responses": {
+          "200": {
+            "description": "{items: [policy_id]}"
+          }
+        }
+      }
+    },
+    "/api/v0/policies/{policy_id}": {
+      "parameters": [
+        {
+          "name": "policy_id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Fetch a policy (export)",
+        "responses": {
+          "200": {
+            "description": "policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Policy"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "unknown policy"
+          }
+        }
+      },
+      "put": {
+        "summary": "Create or update a policy (import). Reviewer role required.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Policy"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "stored"
+          },
+          "422": {
+            "description": "schema validation failed"
+          }
+        }
+      }
+    },
+    "/api/v0/policies/{policy_id}/validate": {
+      "parameters": [
+        {
+          "name": "policy_id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "post": {
+        "summary": "Validate a policy document without storing it",
+        "responses": {
+          "200": {
+            "description": "{valid, errors[]}"
+          }
+        }
+      }
+    },
+    "/api/v0/policies/{policy_id}/evaluate": {
+      "parameters": [
+        {
+          "name": "policy_id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "post": {
+        "summary": "Dry-run evaluation (no request or review is created)",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "tool": {
+                    "type": "string"
+                  },
+                  "action": {
+                    "type": "string"
+                  },
+                  "params": {
+                    "type": "object"
+                  },
+                  "criteria_inputs": {
+                    "type": "object"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "evaluation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EvaluationResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v0/requests": {
+      "post": {
+        "summary": "Submit a governed tool call. Idempotent per request_id.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "policy_id",
+                  "tool",
+                  "action"
+                ],
+                "properties": {
+                  "policy_id": {
+                    "type": "string"
+                  },
+                  "tool": {
+                    "type": "string"
+                  },
+                  "action": {
+                    "type": "string"
+                  },
+                  "params": {
+                    "type": "object"
+                  },
+                  "criteria_inputs": {
+                    "type": "object"
+                  },
+                  "request_id": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "outcome",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubmitResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v0/requests/{request_id}": {
+      "parameters": [
+        {
+          "name": "request_id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Poll the decision for a reviewed request",
+        "responses": {
+          "200": {
+            "description": "status",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequestStatus"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "not reviewed (allowed/denied complete synchronously)"
+          }
+        }
+      }
+    },
+    "/api/v0/hitl": {
+      "get": {
+        "summary": "List pending reviews visible to the principal",
+        "responses": {
+          "200": {
+            "description": "{items: Workitem[]}",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Workitem"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v0/hitl/{hitl_id}": {
+      "parameters": [
+        {
+          "name": "hitl_id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Review detail",
+        "responses": {
+          "200": {
+            "description": "workitem",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Workitem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v0/hitl/{hitl_id}/resolve": {
+      "parameters": [
+        {
+          "name": "hitl_id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "post": {
+        "summary": "Approve, reject, or modify. Modify requires structured modified_params; the result is schema-validated and re-evaluated \u2014 a hard-policy failure never executes and spawns a follow-up review.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "decision"
+                ],
+                "properties": {
+                  "decision": {
+                    "enum": [
+                      "approve",
+                      "reject",
+                      "modify"
+                    ]
+                  },
+                  "modified_params": {
+                    "type": "object"
+                  },
+                  "note": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "resolution",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResolveResult"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "not authorized to decide"
+          },
+          "409": {
+            "description": "already decided differently"
+          }
+        }
+      }
+    },
+    "/api/v0/callbacks/retry": {
+      "post": {
+        "summary": "Retry undelivered callbacks (reviewer role)",
+        "responses": {
+          "200": {
+            "description": "{results: {delivery_id: delivered}}"
+          }
+        }
+      }
+    },
+    "/api/v0/audit": {
+      "get": {
+        "summary": "Query append-only audit events",
+        "parameters": [
+          {
+            "name": "request_id",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "event_type",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "since",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "until",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "{items: AuditEvent[]}",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/AuditEvent"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,3 @@
+# Reviewed hygiene exceptions
+# The hygiene script contains its own detection patterns as literals.
+H4 scripts/check_release_hygiene.sh

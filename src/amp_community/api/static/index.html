@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AMP Community</title>
+<link rel="stylesheet" href="/ui/style.css">
+</head>
+<body>
+<header>
+  <h1>AMP Community <span class="tag">experimental v0</span></h1>
+  <nav aria-label="Sections">
+    <button data-tab="worktray" class="active" aria-current="page">Worktray</button>
+    <button data-tab="policies">Policies</button>
+    <button data-tab="tester">Tester</button>
+    <button data-tab="audit">Audit</button>
+    <button data-tab="settings">Settings</button>
+  </nav>
+  <div id="whoami" aria-live="polite"></div>
+</header>
+
+<main>
+  <p id="status" role="status" aria-live="polite"></p>
+
+  <section id="tab-worktray" aria-label="Pending reviews">
+    <h2>Pending reviews</h2>
+    <button id="refresh-worktray">Refresh</button>
+    <ul id="worktray-list" class="cards"></ul>
+    <article id="workitem-detail" hidden>
+      <h3>Review <span id="wi-id"></span></h3>
+      <dl id="wi-fields"></dl>
+      <details><summary>Requested parameters</summary>
+        <pre id="wi-params"></pre></details>
+      <form id="resolve-form">
+        <fieldset>
+          <legend>Decision</legend>
+          <label><input type="radio" name="decision" value="approve" checked> Approve</label>
+          <label><input type="radio" name="decision" value="reject"> Reject</label>
+          <label><input type="radio" name="decision" value="modify"> Modify</label>
+        </fieldset>
+        <div id="modify-area" hidden>
+          <label for="modified-params">Replacement parameters (JSON object — this
+            is the action that will be validated and re-evaluated)</label>
+          <textarea id="modified-params" rows="6" spellcheck="false"></textarea>
+        </div>
+        <label for="note">Note (optional)</label>
+        <input id="note" type="text" maxlength="4000">
+        <button type="submit">Submit decision</button>
+      </form>
+      <div id="resolve-result" aria-live="polite"></div>
+    </article>
+  </section>
+
+  <section id="tab-policies" hidden aria-label="Policies">
+    <h2>Policies</h2>
+    <div class="row">
+      <div>
+        <button id="refresh-policies">Refresh</button>
+        <ul id="policy-list" class="cards"></ul>
+      </div>
+      <div class="grow">
+        <label for="policy-id">Policy id</label>
+        <input id="policy-id" type="text" placeholder="invoice-governance">
+        <label for="policy-json">Policy document (JSON)</label>
+        <textarea id="policy-json" rows="18" spellcheck="false"></textarea>
+        <div class="row">
+          <button id="policy-validate">Validate</button>
+          <button id="policy-save">Save (import)</button>
+          <button id="policy-export">Export (download)</button>
+        </div>
+        <div id="policy-result" aria-live="polite"></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="tab-tester" hidden aria-label="Evaluation tester">
+    <h2>Evaluation tester <small>(dry run — no review is created)</small></h2>
+    <label for="t-policy">Policy id</label>
+    <input id="t-policy" type="text">
+    <label for="t-tool">Tool</label>
+    <input id="t-tool" type="text" placeholder="pay_invoice">
+    <label for="t-action">Action</label>
+    <input id="t-action" type="text" placeholder="submit">
+    <label for="t-params">Params (JSON object)</label>
+    <textarea id="t-params" rows="6" spellcheck="false">{"amount": 4000}</textarea>
+    <button id="t-run">Evaluate</button>
+    <div id="t-result" aria-live="polite"></div>
+  </section>
+
+  <section id="tab-audit" hidden aria-label="Audit log">
+    <h2>Audit events</h2>
+    <label for="a-request">Request id (optional)</label>
+    <input id="a-request" type="text">
+    <button id="a-query">Query</button>
+    <table id="a-table">
+      <thead><tr><th scope="col">Time</th><th scope="col">Type</th>
+        <th scope="col">Request</th><th scope="col">Actor</th>
+        <th scope="col">Payload</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </section>
+
+  <section id="tab-settings" hidden aria-label="Settings">
+    <h2>Settings</h2>
+    <label for="token">API token (kept in this browser session only)</label>
+    <input id="token" type="password" autocomplete="off">
+    <button id="save-token">Use token</button>
+    <button id="retry-callbacks">Retry undelivered callbacks</button>
+    <p>Server: <a href="/api/v0/openapi.json">OpenAPI document</a> ·
+       <a href="/version">version</a></p>
+    <p class="warn">This UI is intended for local operator use. Do not expose
+       the API beyond this machine without a TLS reverse proxy.</p>
+  </section>
+</main>
+<script src="/ui/app.js"></script>
+</body>
+</html>

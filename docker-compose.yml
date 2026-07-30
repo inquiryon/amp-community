@@ -1,0 +1,14 @@
+# Reference deployment (OSS-005). Copy examples/config.example.json to
+# ./data/config.json, replace the placeholder tokens with strong random
+# values, then:  docker compose up
+# The container binds 0.0.0.0 internally; only publish beyond localhost
+# behind a TLS-terminating reverse proxy.
+services:
+  amp-community:
+    build: .
+    ports:
+      - "127.0.0.1:8080:8080"
+    volumes:
+      - ./data:/data
+    environment:
+      AMP_COMMUNITY_CONFIG: /data/config.json

@@ -1,0 +1,27 @@
+# CI for inquiryon-amp-community (OSS-001 hygiene gate + OSS-004/005 gates).
+name: ci
+on: [push, pull_request]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.10', '3.12']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      # amp-core comes from a sibling checkout until it is published.
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository_owner }}/amp-core
+          path: vendor/amp-core
+      - run: pip install -e ./vendor/amp-core -e .[dev]
+      - run: pytest -q
+  hygiene:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Release hygiene checks (secrets, forbidden files, markers, Enterprise imports)
+        run: bash scripts/check_release_hygiene.sh .
