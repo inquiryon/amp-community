@@ -1,4 +1,4 @@
-# AMP Community Edition (experimental v0) — self-contained, stdlib-only.
+# AMP Community Edition (experimental v0) — self-contained, minimal dependencies.
 FROM python:3.12-slim
 
 WORKDIR /opt/amp
