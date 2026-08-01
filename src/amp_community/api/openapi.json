@@ -292,6 +292,49 @@
           }
         }
       },
+      "DeliveryStatus": {
+        "type": "object",
+        "required": [
+          "delivery_id",
+          "hitl_id",
+          "request_id",
+          "status",
+          "attempts"
+        ],
+        "properties": {
+          "delivery_id": {
+            "type": "string"
+          },
+          "hitl_id": {
+            "type": "string"
+          },
+          "request_id": {
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "pending",
+              "delivered",
+              "failed"
+            ]
+          },
+          "attempts": {
+            "type": "integer"
+          },
+          "last_error": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "created_at": {
+            "type": "string"
+          },
+          "updated_at": {
+            "type": "string"
+          }
+        }
+      },
       "AuditEvent": {
         "type": "object",
         "required": [
@@ -674,11 +717,25 @@
                     ]
                   },
                   "modified_params": {
-                    "type": "object"
+                    "type": "object",
+                    "description": "Required, non-null, and a JSON object when decision=modify. Free-form notes are never treated as the modified action; omitting this field on a modify decision is rejected (422 validation_failed), not silently treated as an empty change."
                   },
                   "note": {
                     "type": "string"
                   }
+                },
+                "if": {
+                  "properties": {
+                    "decision": {
+                      "const": "modify"
+                    }
+                  }
+                },
+                "then": {
+                  "required": [
+                    "decision",
+                    "modified_params"
+                  ]
                 }
               }
             }
@@ -706,10 +763,69 @@
     },
     "/api/v0/callbacks/retry": {
       "post": {
-        "summary": "Retry undelivered callbacks (reviewer role)",
+        "summary": "Retry every undelivered callback (reviewer role)",
         "responses": {
           "200": {
             "description": "{results: {delivery_id: delivered}}"
+          }
+        }
+      }
+    },
+    "/api/v0/callbacks/{delivery_id}": {
+      "parameters": [
+        {
+          "name": "delivery_id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "get": {
+        "summary": "Status of one callback delivery",
+        "responses": {
+          "200": {
+            "description": "delivery status",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeliveryStatus"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "unknown delivery"
+          },
+          "403": {
+            "description": "delivery is outside the principal's visible scope"
+          }
+        }
+      }
+    },
+    "/api/v0/callbacks/{delivery_id}/retry": {
+      "parameters": [
+        {
+          "name": "delivery_id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "post": {
+        "summary": "Retry exactly one callback delivery (reviewer role). Idempotent: an already-delivered record is reported delivered without re-sending.",
+        "responses": {
+          "200": {
+            "description": "{delivery_id, delivered, status}"
+          },
+          "403": {
+            "description": "not a reviewer"
+          },
+          "404": {
+            "description": "unknown delivery"
           }
         }
       }

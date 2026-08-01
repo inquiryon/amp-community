@@ -2,9 +2,10 @@
 
 Design constraints (deliberate):
 
-- Zero dependencies beyond amp-core/amp-community (stdlib ``http.server`` +
-  ``sqlite3``): the Community supply chain stays auditable and startup can
-  never import Enterprise code or contact proprietary services.
+- Minimal dependencies beyond amp-core/amp-community (stdlib ``http.server``
+  + ``sqlite3`` and the required ``jsonschema`` validator): the Community
+  supply chain stays auditable and startup can never import Enterprise code
+  or contact proprietary services.
 - Bearer-token authentication against the local identity provider;
   authorization decisions (view/decide/create) are delegated to it.
 - Every error is the v0 ``ErrorEnvelope``; every route is implementation-
@@ -262,6 +263,14 @@ class ApiHandler(BaseHTTPRequestHandler):
             if principal.role != 'reviewer':
                 raise ApiError(403, 'forbidden', 'only reviewers retry callbacks')
             return self._send(200, {'results': service.retry_callbacks()})
+        m = re.match(r'^/api/v0/callbacks/([^/]+)$', path)
+        if m and method == 'GET':
+            return self._send(200, service.get_delivery(pid, m.group(1)))
+        m = re.match(r'^/api/v0/callbacks/([^/]+)/retry$', path)
+        if m and method == 'POST':
+            if principal.role != 'reviewer':
+                raise ApiError(403, 'forbidden', 'only reviewers retry callbacks')
+            return self._send(200, service.retry_delivery(pid, m.group(1)))
         if path == '/api/v0/audit' and method == 'GET':
             events = service.audit.query(
                 request_id=(query.get('request_id') or [None])[0],

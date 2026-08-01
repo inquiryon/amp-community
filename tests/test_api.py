@@ -12,6 +12,7 @@ import pytest
 
 from amp_community.api import build_api_context
 from amp_community.api.server import start_background
+from amp_community.hitl import NotFoundError
 
 POLICY = {
     'policy_id': 'invoice-governance',
@@ -259,3 +260,150 @@ def test_ui_served_with_csp_and_accessible_markup(server):
 def test_unknown_route_is_enveloped_404(server):
     code, out, _ = call(server, 'GET', '/api/v0/nope', REVIEWER)
     assert code == 404 and out['error']['code'] == 'not_found'
+
+
+# -- OSS-006 contract-audit corrections --------------------------------------
+
+def test_modify_without_modified_params_is_rejected(server):
+    """Regression: decision=modify used to silently coerce a missing/null
+    modified_params to {} and execute it, bypassing the intended structured
+    replacement requirement (v0.json's HITLDecision if/then). Omitting the
+    field, or sending it null, must now be rejected — never executed."""
+    call(server, 'PUT', '/api/v0/policies/invoice-governance', REVIEWER, POLICY)
+    _, out, _ = call(server, 'POST', '/api/v0/requests', AGENT, {
+        'policy_id': 'invoice-governance', 'tool': 'pay_invoice',
+        'action': 'submit', 'params': {'amount': 5000}})
+    code, res, _ = call(server, 'POST', f'/api/v0/hitl/{out["hitl_id"]}/resolve',
+                        REVIEWER, {'decision': 'modify'})
+    assert code == 422 and res['error']['code'] == 'validation_failed'
+    # Still pending: nothing executed, no callback fired.
+    _, wi, _ = call(server, 'GET', f'/api/v0/hitl/{out["hitl_id"]}', REVIEWER)
+    assert wi['status'] == 'pending'
+
+    code, res, _ = call(server, 'POST', f'/api/v0/hitl/{out["hitl_id"]}/resolve',
+                        REVIEWER, {'decision': 'modify', 'modified_params': None})
+    assert code == 422 and res['error']['code'] == 'validation_failed'
+
+
+def test_modify_with_non_object_modified_params_is_rejected(server):
+    call(server, 'PUT', '/api/v0/policies/invoice-governance', REVIEWER, POLICY)
+    _, out, _ = call(server, 'POST', '/api/v0/requests', AGENT, {
+        'policy_id': 'invoice-governance', 'tool': 'pay_invoice',
+        'action': 'submit', 'params': {'amount': 5000}})
+    code, res, _ = call(server, 'POST', f'/api/v0/hitl/{out["hitl_id"]}/resolve',
+                        REVIEWER, {'decision': 'modify',
+                                   'modified_params': 'not-an-object'})
+    assert code == 422 and res['error']['code'] == 'validation_failed'
+
+
+def test_callback_delivery_status_and_targeted_retry(server):
+    call(server, 'PUT', '/api/v0/policies/invoice-governance', REVIEWER, POLICY)
+    _, out, _ = call(server, 'POST', '/api/v0/requests', AGENT, {
+        'policy_id': 'invoice-governance', 'tool': 'pay_invoice',
+        'action': 'submit', 'params': {'amount': 5000}})
+    _, resolved, _ = call(server, 'POST', f'/api/v0/hitl/{out["hitl_id"]}/resolve',
+                          REVIEWER, {'decision': 'approve'})
+    delivery_id = resolved['delivery_id']
+
+    code, status, _ = call(server, 'GET', f'/api/v0/callbacks/{delivery_id}', REVIEWER)
+    assert code == 200
+    assert status['delivery_id'] == delivery_id
+    assert status['hitl_id'] == out['hitl_id']
+    assert status['status'] == 'delivered'
+    assert status['attempts'] >= 1
+
+    # Idempotent: retrying an already-delivered record reports delivered
+    # without incrementing attempts via a real re-send.
+    code, retried, _ = call(server, 'POST',
+                            f'/api/v0/callbacks/{delivery_id}/retry', REVIEWER)
+    assert code == 200 and retried['delivered'] is True and retried['status'] == 'delivered'
+
+    # An unscoped viewer may view (matches identity.can_view for reviewers/
+    # viewers with no scope restriction) but may not retry (reviewer-only).
+    code, out2, _ = call(server, 'GET', f'/api/v0/callbacks/{delivery_id}', VIEWER)
+    assert code == 200
+    code, out2b, _ = call(server, 'POST',
+                          f'/api/v0/callbacks/{delivery_id}/retry', VIEWER)
+    assert code == 403
+
+    # Unknown delivery id -> 404 envelope.
+    code, out3, _ = call(server, 'GET', '/api/v0/callbacks/dlv-does-not-exist',
+                         REVIEWER)
+    assert code == 404 and out3['error']['code'] == 'not_found'
+    code, out3b, _ = call(server, 'POST',
+                          '/api/v0/callbacks/dlv-does-not-exist/retry', REVIEWER)
+    assert code == 404 and out3b['error']['code'] == 'not_found'
+
+    # Only reviewers may retry (the requesting agent may not, even though it
+    # can view its own request's delivery).
+    code, out4, _ = call(server, 'POST',
+                         f'/api/v0/callbacks/{delivery_id}/retry', AGENT)
+    assert code == 403
+
+
+def test_callback_delivery_status_denied_across_scope():
+    """A reviewer scoped to a different opaque scope than the workitem may
+    not view its delivery status — exercises the new authorization branch
+    directly (the shared `server` fixture has no scoped principals)."""
+    tmp = tempfile.mkdtemp(prefix='amp-community-test-')
+    config = {
+        'db_path': os.path.join(tmp, 'amp.db'),
+        'policy_dir': os.path.join(tmp, 'policies'),
+        'callback': {'mode': 'poll'},
+        'tokens': [
+            {'token': REVIEWER, 'principal': 'alice', 'role': 'reviewer'},
+            {'token': AGENT, 'principal': 'agent:invoice-agent', 'role': 'service',
+             'scope': 'team-a'},
+            {'token': 'amp_k_test_other_scope', 'principal': 'bob',
+             'role': 'reviewer', 'scope': 'team-b'},
+        ],
+    }
+    ctx = build_api_context(config)
+    httpd, port = start_background(ctx)
+    base = f'http://127.0.0.1:{port}'
+    try:
+        call(base, 'PUT', '/api/v0/policies/invoice-governance', REVIEWER, POLICY)
+        _, out, _ = call(base, 'POST', '/api/v0/requests', AGENT, {
+            'policy_id': 'invoice-governance', 'tool': 'pay_invoice',
+            'action': 'submit', 'params': {'amount': 5000}})
+        _, resolved, _ = call(base, 'POST', f'/api/v0/hitl/{out["hitl_id"]}/resolve',
+                              REVIEWER, {'decision': 'approve'})
+        delivery_id = resolved['delivery_id']
+        code, err, _ = call(base, 'GET', f'/api/v0/callbacks/{delivery_id}',
+                            'amp_k_test_other_scope')
+        assert code == 403 and err['error']['code'] == 'forbidden'
+    finally:
+        httpd.shutdown()
+
+
+def test_orphaned_callback_delivery_fails_closed():
+    """A delivery whose owning workitem is unavailable cannot be scoped or
+    authorized, so its metadata must not be exposed."""
+    tmp = tempfile.mkdtemp(prefix='amp-community-test-')
+    ctx = build_api_context({
+        'db_path': os.path.join(tmp, 'amp.db'),
+        'policy_dir': os.path.join(tmp, 'policies'),
+        'callback': {'mode': 'poll'},
+        'tokens': [
+            {'token': REVIEWER, 'principal': 'alice', 'role': 'reviewer'},
+        ],
+    })
+    service = ctx.service
+    service.dispatcher.deliveries.create(
+        'dlv-orphan', 'req-missing', 'hitl-missing', {'decision': 'approved'},
+        service.hitl.clock.now_iso())
+    with pytest.raises(NotFoundError):
+        service.get_delivery('alice', 'dlv-orphan')
+
+
+def test_policy_with_unsupported_schema_version_is_rejected(server):
+    """Regression: schema_version is a `const: "v0"` field in v0.json; the
+    runtime previously accepted any value because jsonschema was only an
+    optional dependency and the no-jsonschema fallback checks `required`
+    fields only, never `const`/`enum`. jsonschema is now a hard dependency
+    of amp-community specifically so this is enforced."""
+    bad = {**POLICY, 'policy_id': 'bad-version', 'schema_version': 'v1'}
+    code, out, _ = call(server, 'PUT', '/api/v0/policies/bad-version',
+                        REVIEWER, bad)
+    assert code == 422
+    assert out['error']['code'] == 'invalid_policy'

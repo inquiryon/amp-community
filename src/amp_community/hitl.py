@@ -229,8 +229,11 @@ class HitlService:
                note: str = '') -> HitlDecisionOutcome:
         """Safe modification flow (OSS-004): validate, record, re-evaluate,
         never execute a hard-policy failure, re-review when required."""
-        if not isinstance(modified_params, dict):
-            raise ValidationError('modified_params must be a structured object')
+        if modified_params is None or not isinstance(modified_params, dict):
+            raise ValidationError(
+                'modified_params is required and must be a structured object '
+                'when decision=modify (free-form notes are never treated as '
+                'the modified action)')
         workitem, replay = self._load_for_decision(principal, hitl_id, MODIFIED)
         if replay:
             stored = workitem.get('decision') or {}

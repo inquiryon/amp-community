@@ -28,7 +28,7 @@ from amp_core.interfaces import SystemClock, UuidGenerator
 from amp_core.schema import validate
 
 from .callbacks import CallbackDispatcher
-from .hitl import HitlService, ValidationError
+from .hitl import AuthorizationError, HitlService, NotFoundError, ValidationError
 from .identity import LocalIdentityProvider, Principal
 from .storage import (
     SqliteAuditSink,
@@ -129,7 +129,12 @@ class GovernanceService:
             outcome = self.hitl.reject(principal, hitl_id, note)
             result = {'decision': 'rejected', 'params': None}
         elif decision == 'modify':
-            outcome = self.hitl.modify(principal, hitl_id, modified_params or {}, note)
+            # Do not silently coerce a missing/null modified_params to {}:
+            # HitlService.modify() is the single point that enforces the
+            # structured-object requirement (OSS-006 compatibility fix —
+            # previously an omitted field defaulted here and executed with
+            # empty params, bypassing the intended re-review).
+            outcome = self.hitl.modify(principal, hitl_id, modified_params, note)
             result = {'decision': 'modified',
                       'params': outcome.executed_params,
                       'executed': outcome.executed_params is not None,
@@ -158,6 +163,48 @@ class GovernanceService:
                                 'resumed' if payload.get('params') is not None
                                 else 'closed')
         return results
+
+    # -- per-delivery status/retry (OSS-006 compatibility addition) -------
+    def _delivery_for_principal(self, principal: str, delivery_id: str) -> dict:
+        """Fetch a delivery record, enforcing the same visibility rule as
+        the underlying workitem (whoever may view the review may see its
+        delivery status)."""
+        record = self.dispatcher.deliveries.get(delivery_id)
+        if record is None:
+            raise NotFoundError(delivery_id)
+        workitem = self.hitl.store.get(record['hitl_id'])
+        # A delivery without its owning workitem cannot be authorized safely.
+        # Treat it as unavailable instead of exposing orphaned delivery
+        # metadata to any authenticated caller that can guess its id.
+        if workitem is None:
+            raise NotFoundError(delivery_id)
+        if not self.hitl.identity.can_view(principal, workitem):
+            raise AuthorizationError(f'{principal} may not view delivery {delivery_id}')
+        return record
+
+    def get_delivery(self, principal: str, delivery_id: str) -> dict:
+        """Status of one callback delivery (new: previously only a bulk
+        retry-everything endpoint existed, with no way to check a single
+        delivery or target a retry at it)."""
+        record = self._delivery_for_principal(principal, delivery_id)
+        return {'delivery_id': record['delivery_id'], 'hitl_id': record['hitl_id'],
+                'request_id': record['request_id'], 'status': record['status'],
+                'attempts': record['attempts'], 'last_error': record['last_error'],
+                'created_at': record['created_at'], 'updated_at': record['updated_at']}
+
+    def retry_delivery(self, principal: str, delivery_id: str) -> dict:
+        """Retry exactly one delivery. Idempotent: an already-delivered
+        record is reported delivered without re-sending."""
+        self._delivery_for_principal(principal, delivery_id)
+        delivered = self.dispatcher.attempt(delivery_id)
+        if delivered:
+            record = self.dispatcher.deliveries.get(delivery_id)
+            payload = record['payload']
+            self.hitl.close(record['hitl_id'],
+                            'resumed' if payload.get('params') is not None
+                            else 'closed')
+        return {'delivery_id': delivery_id, 'delivered': delivered,
+                'status': self.dispatcher.deliveries.get(delivery_id)['status']}
 
     # -- history ----------------------------------------------------------
     def audit_history(self, request_id: str) -> list:
