@@ -14,7 +14,7 @@ import sqlite3
 import threading
 from typing import Optional
 
-from amp_core.interfaces import AuditEvent
+from inquiryon_amp_core.interfaces import AuditEvent
 
 _SCHEMA = """
 CREATE TABLE IF NOT EXISTS workitems (

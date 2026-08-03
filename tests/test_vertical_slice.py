@@ -12,13 +12,13 @@ import itertools
 
 import pytest
 
-from amp_core import InMemoryPolicyStore
-from amp_community import (
+from inquiryon_amp_core import InMemoryPolicyStore
+from inquiryon_amp_community import (
     AuthorizationError,
     ConflictError,
     build_local_service,
 )
-from amp_community.identity import Principal
+from inquiryon_amp_community.identity import Principal
 
 POLICY = {
     'policy_id': 'invoice-governance',

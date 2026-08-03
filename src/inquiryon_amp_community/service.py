@@ -17,15 +17,15 @@ from __future__ import annotations
 
 from typing import Optional
 
-from amp_core import (
+from inquiryon_amp_core import (
     AuditEvent,
     DecisionRequest,
     StaticPolicyProvider,
     decide_with_safety,
     run_eval_policy,
 )
-from amp_core.interfaces import SystemClock, UuidGenerator
-from amp_core.schema import validate
+from inquiryon_amp_core.interfaces import SystemClock, UuidGenerator
+from inquiryon_amp_core.schema import validate
 
 from .callbacks import CallbackDispatcher
 from .hitl import AuthorizationError, HitlService, NotFoundError, ValidationError

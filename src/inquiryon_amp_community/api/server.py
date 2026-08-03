@@ -26,8 +26,8 @@ import threading
 import urllib.parse
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
-from amp_core import run_eval_policy
-from amp_core.schema import validate
+from inquiryon_amp_core import run_eval_policy
+from inquiryon_amp_core.schema import validate
 
 from ..hitl import (
     AuthorizationError,

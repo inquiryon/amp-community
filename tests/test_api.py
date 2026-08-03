@@ -10,9 +10,9 @@ import urllib.request
 
 import pytest
 
-from amp_community.api import build_api_context
-from amp_community.api.server import start_background
-from amp_community.hitl import NotFoundError
+from inquiryon_amp_community.api import build_api_context
+from inquiryon_amp_community.api.server import start_background
+from inquiryon_amp_community.hitl import NotFoundError
 
 POLICY = {
     'policy_id': 'invoice-governance',
@@ -219,9 +219,9 @@ def test_provider_failure_falls_back_safely_with_audit():
     """OSS-005 acceptance: provider failure follows the safe Community
     fallback and produces an audit event. Exercised at the composition seam
     with a crashing provider registered."""
-    from amp_core import InMemoryPolicyStore
-    from amp_community import build_local_service
-    from amp_community.identity import Principal
+    from inquiryon_amp_core import InMemoryPolicyStore
+    from inquiryon_amp_community import build_local_service
+    from inquiryon_amp_community.identity import Principal
 
     class Crashing:
         name, version = 'crashing', '0'

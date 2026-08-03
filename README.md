@@ -44,9 +44,9 @@ tool request
 ## Quick start
 
 ```python
-from amp_core import InMemoryPolicyStore
-from amp_community import build_local_service, HttpAgentCallback
-from amp_community.identity import Principal
+from inquiryon_amp_core import InMemoryPolicyStore
+from inquiryon_amp_community import build_local_service, HttpAgentCallback
+from inquiryon_amp_community.identity import Principal
 
 policies = InMemoryPolicyStore()
 policies.put_policy('invoice-governance', {...})  # see amp-core README
@@ -77,7 +77,7 @@ A self-hosted HTTP deployment (stdlib only — no web framework):
 ```bash
 pip install inquiryon-amp-core inquiryon-amp-community   # or local paths
 cp examples/config.example.json config.json               # set strong tokens!
-python -m amp_community.api --config config.json
+python -m inquiryon_amp_community.api --config config.json
 # UI at http://127.0.0.1:8080/  ·  OpenAPI at /api/v0/openapi.json
 ```
 

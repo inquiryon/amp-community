@@ -22,7 +22,7 @@ State model (v0):
   follow-up review instead of resuming the agent.
 
 Authorization is separated from authentication: an
-:class:`amp_core.interfaces.IdentityProvider` answers view/decide questions;
+:class:`inquiryon_amp_core.interfaces.IdentityProvider` answers view/decide questions;
 requesters may never decide their own requests; service identities
 (``provider:*``/``agent:*``) may create but not decide. Scope is opaque —
 items are visible only to principals whose scope matches (or reviewers with
@@ -34,9 +34,9 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Optional
 
-from amp_core import AuditEvent, run_eval_policy
-from amp_core.interfaces import AuditEventSink, Clock, IdGenerator
-from amp_core.schema import validate
+from inquiryon_amp_core import AuditEvent, run_eval_policy
+from inquiryon_amp_core.interfaces import AuditEventSink, Clock, IdGenerator
+from inquiryon_amp_core.schema import validate
 
 PENDING = 'pending'
 APPROVED = 'approved'

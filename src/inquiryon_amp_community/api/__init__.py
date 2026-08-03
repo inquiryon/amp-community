@@ -11,7 +11,7 @@ from __future__ import annotations
 import json
 import os
 
-from amp_core import FilePolicyStore
+from inquiryon_amp_core import FilePolicyStore
 
 from ..identity import Principal
 from ..service import build_local_service
@@ -69,7 +69,7 @@ def build_api_context(config: dict) -> ApiContext:
 def main(argv=None) -> int:
     import argparse
     parser = argparse.ArgumentParser(
-        prog='python -m amp_community.api',
+        prog='python -m inquiryon_amp_community.api',
         description='AMP Community Edition API + UI (experimental v0)')
     parser.add_argument('--config', default=os.environ.get(
         'AMP_COMMUNITY_CONFIG', 'config.json'))

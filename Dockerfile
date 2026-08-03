@@ -11,4 +11,4 @@ VOLUME /data
 ENV AMP_COMMUNITY_CONFIG=/data/config.json
 EXPOSE 8080
 HEALTHCHECK CMD python -c "import urllib.request;urllib.request.urlopen('http://127.0.0.1:8080/health')"
-CMD ["python", "-m", "amp_community.api", "--host", "0.0.0.0"]
+CMD ["python", "-m", "inquiryon_amp_community.api", "--host", "0.0.0.0"]

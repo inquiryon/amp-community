@@ -14,8 +14,8 @@ import urllib.error
 import urllib.request
 from typing import Optional
 
-from amp_core import AuditEvent
-from amp_core.interfaces import AuditEventSink, Clock, IdGenerator
+from inquiryon_amp_core import AuditEvent
+from inquiryon_amp_core.interfaces import AuditEventSink, Clock, IdGenerator
 
 
 class HttpAgentCallback:

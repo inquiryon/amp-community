@@ -12,7 +12,7 @@ requires-python = ">=3.10"
 # jsonschema is a hard dependency here (unlike amp-core, which keeps it
 # optional for pure in-process embedding): amp-community is a network-facing
 # service that receives policy/HITL/evaluation payloads from untrusted
-# callers, and amp_core.schema.validate() silently degrades to a
+# callers, and inquiryon_amp_core.schema.validate() silently degrades to a
 # required-fields-only check when jsonschema is absent — enum, const
 # (schema_version), and pattern constraints go unenforced with no warning.
 # That degraded mode is unacceptable for a service whose job is to reject
@@ -26,7 +26,7 @@ dev = ["pytest>=7"]
 where = ["src"]
 
 [tool.setuptools.package-data]
-amp_community = ["api/openapi.json", "api/static/*"]
+inquiryon_amp_community = ["api/openapi.json", "api/static/*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
