@@ -1,3 +1,7 @@
 # Reviewed hygiene exceptions
+# The approved public security contact (OSS-001 D5, 2026-07-27) appears in
+# these files intentionally — not a leaked internal reference.
+H4 SECURITY.md
+H4 CODE_OF_CONDUCT.md
 # The hygiene script contains its own detection patterns as literals.
 H4 scripts/check_release_hygiene.sh
