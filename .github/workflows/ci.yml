@@ -12,11 +12,15 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-      # amp-core comes from a sibling checkout until it is published.
+      # amp-core comes from a sibling checkout until it is published. The
+      # default GITHUB_TOKEN is scoped to this repo only and 404s on a
+      # second private repo, so this uses a fine-grained PAT
+      # (Contents: Read-only, scoped to amp-core) instead.
       - uses: actions/checkout@v4
         with:
           repository: ${{ github.repository_owner }}/amp-core
           path: vendor/amp-core
+          token: ${{ secrets.AMP_CORE_READ_TOKEN }}
       - run: pip install -e ./vendor/amp-core -e .[dev]
       - run: pytest -q
   hygiene:
