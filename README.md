@@ -28,7 +28,13 @@ pip install -e ./amp-community
 
 Once published, this collapses to
 `pip install inquiryon-amp-core inquiryon-amp-community`. Everything below
-(Quick start, REST API + operator UI) assumes this step is already done.
+assumes this step is already done.
+
+**AMP is installed — what's next?** The next couple of sections explain what
+it actually does ("The governance slice", "Components") and show the API
+shape in a single Python process ("Quick start", no service to run). If you
+just want to get AMP running and connect an agent to it, skip ahead to
+**"Run the AMP Service"**.
 
 ## The governance slice
 
@@ -94,7 +100,7 @@ Community runs without RLHF workers, Stripe, enterprise analytics,
 organization administration, or any proprietary service — and never
 silently contacts one.
 
-## REST API + operator UI
+## Run the AMP Service (REST API + Operator UI)
 
 A self-hosted HTTP deployment (stdlib only — no web framework; see
 [Installation](#installation) above first):
@@ -122,6 +128,61 @@ python -m inquiryon_amp_community.api --config config.json
   Put a TLS-terminating reverse proxy in front before external exposure.
 - Docker: `docker compose up` (see `docker-compose.yml`; config lives in
   `./data/config.json`).
+
+### Verify it's working
+
+A fresh instance has no policies yet, so this stores one (as a `reviewer`
+— only reviewers manage policies), submits a governed request against it
+(as the `service`-role agent token), then resolves it:
+
+```bash
+curl -X PUT http://127.0.0.1:8080/api/v0/policies/invoice-governance \
+  -H "Authorization: Bearer amp_k_test_CHANGE-ME-reviewer" \
+  -H "Content-Type: application/json" \
+  -d '{"action_governance": {"criteria": [
+        {"criterion_id": "c-high-amount", "tool": "pay_invoice", "hardness": "hard",
+         "evaluator": {"type": "compute", "formula": "amount > 1000"}}
+      ]}}'
+# -> {"policy_id": "invoice-governance", "stored": true}
+
+curl -X POST http://127.0.0.1:8080/api/v0/requests \
+  -H "Authorization: Bearer amp_k_test_CHANGE-ME-agent" \
+  -H "Content-Type: application/json" \
+  -d '{"policy_id": "invoice-governance", "tool": "pay_invoice", "action": "submit", "params": {"amount": 4000}}'
+# -> {"request_id": "...", "status": "pending_review", "hitl_id": "..."}
+
+curl -X POST http://127.0.0.1:8080/api/v0/hitl/<hitl_id>/resolve \
+  -H "Authorization: Bearer amp_k_test_CHANGE-ME-reviewer" \
+  -H "Content-Type: application/json" \
+  -d '{"decision": "approve"}'
+# -> {"hitl_id": "...", "result": {"decision": "approved", ...}, "delivered": true, ...}
+```
+
+Or open the operator UI at `http://127.0.0.1:8080/` and do the same thing
+by hand: submit isn't available there (that's the agent's job), but the
+worktray shows pending reviews and lets you approve/reject/modify them.
+
+## Connect an Agent to AMP
+
+With the service running and verified working (previous section), an
+agent connects one of two ways — full integration detail lives in each
+SDK's own README/examples, not duplicated here:
+
+- **Directly via the REST API** — any language, no dependency beyond an
+  HTTP client. Full reference: the OpenAPI document at
+  `/api/v0/openapi.json` on your running instance.
+- **Via an SDK** — typed client, handles auth headers, retries, and
+  polling for you:
+  - Python: [`amp-sdk-python`](https://github.com/inquiryon/amp-sdk-python)
+    — see its `examples/` directory (`01_evaluate.py` through
+    `06_audit_query.py`): policy evaluation, governed submission, HITL
+    polling, approve/reject/modify, callback delivery, audit queries.
+  - TypeScript: [`amp-sdk-ts`](https://github.com/inquiryon/amp-sdk-ts) —
+    same coverage, `examples/01-evaluate.ts` through
+    `06-audit-query.ts`.
+
+Both SDKs are, like this repo, not yet published — see their own READMEs
+for local-install instructions.
 
 ## License
 
