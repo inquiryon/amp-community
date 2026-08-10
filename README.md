@@ -109,7 +109,8 @@ A self-hosted HTTP deployment (stdlib only — no web framework; see
 cd amp-community
 cp examples/config.example.json config.json               # set strong tokens!
 python -m inquiryon_amp_community.api --config config.json
-# UI at http://127.0.0.1:8080/  ·  OpenAPI at /api/v0/openapi.json
+# UI at http://127.0.0.1:8080/
+# OpenAPI (raw spec, not a rendered doc page) at http://127.0.0.1:8080/api/v0/openapi.json
 ```
 
 - Authentication: `Authorization: Bearer <token>` (tokens/roles in config:
@@ -118,7 +119,10 @@ python -m inquiryon_amp_community.api --config config.json
   dry-run evaluation, governed request submission (idempotent per
   `request_id`), poll for the decision, HITL list/get/resolve
   (approve/reject/modify), callback retry, audit query. The OpenAPI
-  document is the SDK compatibility boundary.
+  document is the SDK compatibility boundary. It's the raw spec, not a
+  rendered doc page (this server is stdlib-only, no bundled UI for it) —
+  paste it into [editor.swagger.io](https://editor.swagger.io) for an
+  interactive, browsable view.
 - UI: worktray (with structured modify + re-evaluation outcome), policy
   editor/tester, audit viewer, settings. Vanilla JS, no build step, CSP'd.
 - Delivery modes: `{"callback": {"mode": "poll"}}` (agents poll
