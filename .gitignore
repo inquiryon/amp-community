@@ -4,3 +4,11 @@ __pycache__/
 dist/
 build/
 .venv/
+
+# Local runtime artifacts from following the README/docker-compose as
+# documented — these contain real tokens and HITL/audit data, never
+# meant to be committed.
+config.json
+*.db
+/policies/
+/data/

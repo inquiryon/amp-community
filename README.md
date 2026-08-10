@@ -113,6 +113,13 @@ python -m inquiryon_amp_community.api --config config.json
 # OpenAPI (raw spec, not a rendered doc page) at http://127.0.0.1:8080/api/v0/openapi.json
 ```
 
+`config.json` holds your real tokens, and the service writes its SQLite
+state file alongside it — both land inside this git checkout but are
+already gitignored, so a plain `git add .` here won't stage secrets. If
+you copy this checkout elsewhere or drop it into your own repo, keep that
+`.gitignore` (or add equivalent rules) rather than assuming it travels
+with you.
+
 - Authentication: `Authorization: Bearer <token>` (tokens/roles in config:
   `reviewer`, `viewer`, `service`).
 - Endpoints: health/version, policy list/get/import/export/validate,
