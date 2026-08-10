@@ -6,6 +6,24 @@ built on [`inquiryon-amp-core`](https://github.com/inquiryon/amp-core).
 
 **Status: experimental `v0`.**
 
+## Installation
+
+**Not yet published to PyPI** — `inquiryon-amp-core` and
+`inquiryon-amp-community` must be installed from a local clone for now.
+Clone both as sibling directories (`amp-community` depends on `amp-core`,
+so install it first):
+
+```bash
+git clone https://github.com/inquiryon/amp-core.git
+git clone https://github.com/inquiryon/amp-community.git
+pip install -e ./amp-core           # amp-community's own dependency
+pip install -e ./amp-community
+```
+
+Once published, this collapses to
+`pip install inquiryon-amp-core inquiryon-amp-community`. Everything below
+(Quick start, REST API + operator UI) assumes this step is already done.
+
 ## The governance slice
 
 ```text
@@ -72,19 +90,8 @@ silently contacts one.
 
 ## REST API + operator UI
 
-**Not yet published to PyPI** — `inquiryon-amp-core` and
-`inquiryon-amp-community` must be installed from a local clone for now.
-Clone both as sibling directories (`amp-community` depends on `amp-core`,
-so install it first):
-
-```bash
-git clone https://github.com/inquiryon/amp-core.git
-git clone https://github.com/inquiryon/amp-community.git
-pip install -e ./amp-core           # amp-community's own dependency
-pip install -e ./amp-community
-```
-
-Then run the self-hosted HTTP deployment (stdlib only — no web framework):
+A self-hosted HTTP deployment (stdlib only — no web framework; see
+[Installation](#installation) above first):
 
 ```bash
 cd amp-community
@@ -92,8 +99,6 @@ cp examples/config.example.json config.json               # set strong tokens!
 python -m inquiryon_amp_community.api --config config.json
 # UI at http://127.0.0.1:8080/  ·  OpenAPI at /api/v0/openapi.json
 ```
-
-Once published, this collapses to `pip install inquiryon-amp-core inquiryon-amp-community`.
 
 - Authentication: `Authorization: Bearer <token>` (tokens/roles in config:
   `reviewer`, `viewer`, `service`).
