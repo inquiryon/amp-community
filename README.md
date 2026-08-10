@@ -170,6 +170,10 @@ curl -X POST http://127.0.0.1:8080/api/v0/hitl/$HITL_ID/resolve \
 Or open the operator UI at `http://127.0.0.1:8080/` and do the same thing
 by hand: submit isn't available there (that's the agent's job), but the
 worktray shows pending reviews and lets you approve/reject/modify them.
+**First, go to Settings and paste in the reviewer token used above**
+(`amp_k_test_CHANGE-ME-reviewer`) — the UI has no token by default, so
+worktray/policy actions fail with `401 unauthenticated: missing bearer
+token` until you set one. The token is kept in that browser session only.
 
 ## Connect an Agent to AMP
 
