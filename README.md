@@ -21,7 +21,8 @@ git clone https://github.com/inquiryon/amp-community.git
 # Skip if you already have your own environment set up.
 python3 -m venv .venv && source .venv/bin/activate
 
-pip install -e ./amp-core           # amp-community's own dependency
+# amp-core first — amp-community depends on it
+pip install -e ./amp-core
 pip install -e ./amp-community
 ```
 
