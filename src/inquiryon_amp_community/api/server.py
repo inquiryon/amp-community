@@ -76,12 +76,14 @@ class ApiHandler(BaseHTTPRequestHandler):
         return self.server.ctx  # type: ignore[attr-defined]
 
     # -- plumbing ---------------------------------------------------------
-    def _send(self, status: int, payload, content_type='application/json'):
+    def _send(self, status: int, payload, content_type='application/json', no_store=False):
         body = _json_bytes(payload) if content_type == 'application/json' else payload
         self.send_response(status)
         self.send_header('Content-Type', content_type)
         self.send_header('Content-Length', str(len(body)))
         self.send_header('X-Content-Type-Options', 'nosniff')
+        if no_store:
+            self.send_header('Cache-Control', 'no-store')
         if content_type.startswith('text/html'):
             self.send_header('Content-Security-Policy',
                              "default-src 'self'; frame-ancestors 'none'")
@@ -323,7 +325,7 @@ class ApiHandler(BaseHTTPRequestHandler):
             '.css': 'text/css; charset=utf-8',
         }.get(os.path.splitext(path)[1], 'application/octet-stream')
         with open(path, 'rb') as f:
-            self._send(200, f.read(), content_type)
+            self._send(200, f.read(), content_type, no_store=True)
 
 
 def make_server(ctx: ApiContext, host: str = '127.0.0.1', port: int = 8080):
