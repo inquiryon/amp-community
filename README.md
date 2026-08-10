@@ -149,13 +149,18 @@ curl -X PUT http://127.0.0.1:8080/api/v0/policies/invoice-governance \
       ]}}'
 # -> {"policy_id": "invoice-governance", "stored": true}
 
-curl -X POST http://127.0.0.1:8080/api/v0/requests \
+# Capture hitl_id from the response so the next command needs no manual
+# editing — a literal "<hitl_id>" placeholder here would be misread by
+# your shell as an input redirect, not a value to fill in.
+HITL_ID=$(curl -s -X POST http://127.0.0.1:8080/api/v0/requests \
   -H "Authorization: Bearer amp_k_test_CHANGE-ME-agent" \
   -H "Content-Type: application/json" \
-  -d '{"policy_id": "invoice-governance", "tool": "pay_invoice", "action": "submit", "params": {"amount": 4000}}'
-# -> {"request_id": "...", "status": "pending_review", "hitl_id": "..."}
+  -d '{"policy_id": "invoice-governance", "tool": "pay_invoice", "action": "submit", "params": {"amount": 4000}}' \
+  | python3 -c "import json,sys; print(json.load(sys.stdin)['hitl_id'])")
+echo "hitl_id: $HITL_ID"
+# -> hitl_id: hitl-...
 
-curl -X POST http://127.0.0.1:8080/api/v0/hitl/<hitl_id>/resolve \
+curl -X POST http://127.0.0.1:8080/api/v0/hitl/$HITL_ID/resolve \
   -H "Authorization: Bearer amp_k_test_CHANGE-ME-reviewer" \
   -H "Content-Type: application/json" \
   -d '{"decision": "approve"}'
