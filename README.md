@@ -16,6 +16,11 @@ so install it first):
 ```bash
 git clone https://github.com/inquiryon/amp-core.git
 git clone https://github.com/inquiryon/amp-community.git
+
+# Optional but recommended — keeps this off your system/global Python.
+# Skip if you already have your own environment set up.
+python3 -m venv .venv && source .venv/bin/activate
+
 pip install -e ./amp-core           # amp-community's own dependency
 pip install -e ./amp-community
 ```
