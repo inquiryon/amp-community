@@ -29,7 +29,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible {
 label { display: block; margin-top: 0.6rem; font-weight: 600; font-size: 0.85rem; }
 input[type=text], input[type=password], textarea { width: 100%; font: inherit;
   padding: 0.4rem; border: 1px solid var(--line); border-radius: 6px;
-  background: var(--bg); color: var(--fg); }
+  background: var(--bg); color: var(--fg); margin-bottom: 0.4rem; }
 textarea { font-family: ui-monospace, monospace; font-size: 0.85rem; }
 fieldset { border: 1px solid var(--line); border-radius: 6px; margin-top: 0.6rem; }
 fieldset label { display: inline-block; margin-right: 1rem; font-weight: 400; }
