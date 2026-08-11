@@ -6,7 +6,9 @@ built on [`inquiryon-amp-core`](https://github.com/inquiryon/amp-core).
 
 **Status: experimental `v0`.**
 
-## Installation
+## Get Started
+
+### Installation
 
 **Not yet published to PyPI** — `inquiryon-amp-core` and
 `inquiryon-amp-community` must be installed from a local clone for now.
@@ -30,77 +32,12 @@ Once published, this collapses to
 `pip install inquiryon-amp-core inquiryon-amp-community`. Everything below
 assumes this step is already done.
 
-**AMP is installed — what's next?** The next couple of sections explain what
-it actually does ("The governance slice", "Components") and show the API
-shape in a single Python process ("Quick start", no service to run). If you
-just want to get AMP running and connect an agent to it, skip ahead to
-**"Run the AMP Service"**.
+**AMP is installed — what's next?** Continue to **"Run the AMP Service"**
+below to get it running and connect an agent. Curious what it's actually
+doing first? Skip down to **"How it works"** for the governance flow,
+components, and a Python API example.
 
-## The governance slice
-
-```text
-tool request
-  -> deterministic policy evaluation (amp-core)
-  -> decision provider under safety invariants
-  -> allow, or human-review routing
-  -> authorized approve / reject / modify
-  -> schema validation + policy re-evaluation of modifications
-  -> callback delivery with persisted, retryable delivery records
-  -> complete append-only audit history
-```
-
-## Components
-
-- `HitlService` — explicit state machine
-  (`pending -> approved|rejected|modified -> resumed|closed`, plus
-  `expired`/`cancelled`), idempotent creation and resolution, authorization
-  separated from authentication, and safe structured modifications: a
-  modified action is schema-validated, re-evaluated against policy, and
-  **never executed when it fails a hard policy** — it spawns a linked
-  follow-up review instead.
-- `GovernanceService` — REST-neutral application service composing
-  evaluation, provider decision, HITL, callbacks, and audit.
-- `SqliteBackend` + stores — zero-dependency reference storage (stdlib
-  `sqlite3`); implement the same interfaces for Postgres or others.
-- `LocalIdentityProvider` — API-token identity with reviewer/viewer/service
-  roles and opaque-scope enforcement.
-- `CallbackDispatcher` + `HttpAgentCallback` — every decision creates a
-  persisted delivery record with a stable `delivery_id`; failures are
-  visible and retryable; retries are idempotent.
-- Audit: application-level append-only event history with query by
-  request/type/time and a single sanctioned retention purge. (Cryptographic
-  tamper evidence is explicitly out of scope for v0.)
-
-## Quick start
-
-```python
-from inquiryon_amp_core import InMemoryPolicyStore
-from inquiryon_amp_community import build_local_service, HttpAgentCallback
-from inquiryon_amp_community.identity import Principal
-
-policies = InMemoryPolicyStore()
-policies.put_policy('invoice-governance', {...})  # see amp-core README
-
-service = build_local_service(
-    policies,
-    tokens={'amp_k_test_reviewer': Principal('alice', 'reviewer')},
-    callback=HttpAgentCallback('http://localhost:8085/agent-callback'),
-    db_path='amp-community.db',
-    policy_resolver=lambda wi: policies.get_policy('invoice-governance'),
-)
-
-out = service.submit_request('invoice-governance', 'pay_invoice', 'submit',
-                             {'amount': 4000}, requested_by='agent:invoice-agent')
-# -> {'status': 'pending_review', 'hitl_id': ...}
-service.resolve('alice', out['hitl_id'], 'approve')
-print(service.audit_history(out['request_id']))
-```
-
-Community runs without RLHF workers, Stripe, enterprise analytics,
-organization administration, or any proprietary service — and never
-silently contacts one.
-
-## Run the AMP Service (REST API + Operator UI)
+### Run the AMP Service (REST API + Operator UI)
 
 A self-hosted HTTP deployment (stdlib only — no web framework; see
 [Installation](#installation) above first):
@@ -140,7 +77,7 @@ with you.
 - Docker: `docker compose up` (see `docker-compose.yml`; config lives in
   `./data/config.json`).
 
-### Verify it's working
+#### Verify it's working
 
 A fresh instance has no policies yet, so this stores one (as a `reviewer`
 — only reviewers manage policies), submits a governed request against it
@@ -174,7 +111,7 @@ curl -X POST http://127.0.0.1:8080/api/v0/hitl/$HITL_ID/resolve \
 # -> {"hitl_id": "...", "result": {"decision": "approved", ...}, "delivered": true, ...}
 ```
 
-Or open the operator UI at `http://127.0.0.1:8080/` and do the same thing
+Or open the AMP Operator UI at `http://127.0.0.1:8080/` and do the same thing
 by hand: submit isn't available there (that's the agent's job), but the
 worktray shows pending reviews and lets you approve/reject/modify them.
 **First, go to Settings and paste in the reviewer token used above**
@@ -182,7 +119,7 @@ worktray shows pending reviews and lets you approve/reject/modify them.
 worktray/policy actions fail with `401 unauthenticated: missing bearer
 token` until you set one. The token is kept in that browser session only.
 
-## Connect an Agent to AMP
+### Connect an Agent to AMP
 
 With the service running and verified working (previous section), an
 agent connects one of two ways — full integration detail lives in each
@@ -201,8 +138,78 @@ SDK's own README/examples, not duplicated here:
     same coverage, `examples/01-evaluate.ts` through
     `06-audit-query.ts`.
 
-Both SDKs are, like this repo, not yet published — see their own READMEs
-for local-install instructions.
+Building your own agent isn't the only starting point — call these APIs
+from an agent you already run, or see AMP governance wired into a real
+agent end-to-end: [Hermes Agent](https://github.com/inquiryon/amp-hermes-plugin)
+and [OpenClaw](https://github.com/inquiryon/amp-openclaw-plugin) both ship
+an AMP governance plugin (tool-call interception, HITL prompts, policy
+enforcement) that you can clone and run against your own instance.
+
+## How it works
+
+### The governance layer
+
+```text
+tool request
+  -> deterministic policy evaluation (amp-core)
+  -> decision provider under safety invariants
+  -> allow, or human-review routing
+  -> authorized approve / reject / modify
+  -> schema validation + policy re-evaluation of modifications
+  -> callback delivery with persisted, retryable delivery records
+  -> complete append-only audit history
+```
+
+### AMP Community Edition Components
+
+- `HitlService` — explicit state machine
+  (`pending -> approved|rejected|modified -> resumed|closed`, plus
+  `expired`/`cancelled`), idempotent creation and resolution, authorization
+  separated from authentication, and safe structured modifications: a
+  modified action is schema-validated, re-evaluated against policy, and
+  **never executed when it fails a hard policy** — it spawns a linked
+  follow-up review instead.
+- `GovernanceService` — REST-neutral application service composing
+  evaluation, provider decision, HITL, callbacks, and audit.
+- `SqliteBackend` + stores — zero-dependency reference storage (stdlib
+  `sqlite3`); implement the same interfaces for Postgres or others.
+- `LocalIdentityProvider` — API-token identity with reviewer/viewer/service
+  roles and opaque-scope enforcement.
+- `CallbackDispatcher` + `HttpAgentCallback` — every decision creates a
+  persisted delivery record with a stable `delivery_id`; failures are
+  visible and retryable; retries are idempotent.
+- Audit: application-level append-only event history with query by
+  request/type/time and a single sanctioned retention purge. (Cryptographic
+  tamper evidence is explicitly out of scope for v0.)
+
+### Python API Example
+
+```python
+from inquiryon_amp_core import InMemoryPolicyStore
+from inquiryon_amp_community import build_local_service, HttpAgentCallback
+from inquiryon_amp_community.identity import Principal
+
+policies = InMemoryPolicyStore()
+policies.put_policy('invoice-governance', {...})  # see amp-core README
+
+service = build_local_service(
+    policies,
+    tokens={'amp_k_test_reviewer': Principal('alice', 'reviewer')},
+    callback=HttpAgentCallback('http://localhost:8085/agent-callback'),
+    db_path='amp-community.db',
+    policy_resolver=lambda wi: policies.get_policy('invoice-governance'),
+)
+
+out = service.submit_request('invoice-governance', 'pay_invoice', 'submit',
+                             {'amount': 4000}, requested_by='agent:invoice-agent')
+# -> {'status': 'pending_review', 'hitl_id': ...}
+service.resolve('alice', out['hitl_id'], 'approve')
+print(service.audit_history(out['request_id']))
+```
+
+The Community Edition runs without RLHF workers, Stripe, enterprise
+analytics, organization administration, or any proprietary service — and
+never silently contacts one.
 
 ## License
 
