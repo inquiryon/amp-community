@@ -1,10 +1,8 @@
-# inquiryon-amp-community (experimental v0)
+# inquiryon-amp-community
 
 AMP Community Edition governance services: human-in-the-loop decision
 workflow, append-only audit history, and retryable agent-callback delivery,
 built on [`inquiryon-amp-core`](https://github.com/inquiryon/amp-core).
-
-**Status: experimental `v0`.**
 
 ## Get Started
 
