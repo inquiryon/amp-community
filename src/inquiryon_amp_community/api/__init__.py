@@ -63,7 +63,8 @@ def build_api_context(config: dict) -> ApiContext:
         policy_store, tokens, callback,
         db_path=config.get('db_path', './amp-community.db'))
     identity = service.hitl.identity
-    return ApiContext(service, identity)
+    from .. import __version__
+    return ApiContext(service, identity, version=__version__)
 
 
 def main(argv=None) -> int:

@@ -65,6 +65,13 @@ def call(base, method, path, token=None, body=None, raw=False):
         return exc.code, (payload if raw else json.loads(payload)), exc.headers
 
 
+def test_version_endpoint_reports_package_version(server):
+    import inquiryon_amp_community
+    status, body, _ = call(server, 'GET', '/version')
+    assert status == 200
+    assert body['version'] == inquiryon_amp_community.__version__
+
+
 def test_release_gate_full_slice(server):
     # 1. Import a policy.
     code, out, _ = call(server, 'PUT', '/api/v0/policies/invoice-governance',
