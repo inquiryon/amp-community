@@ -206,6 +206,12 @@ The Community Edition runs without RLHF workers, Stripe, enterprise
 analytics, organization administration, or any proprietary service — and
 never silently contacts one.
 
+## Questions and feedback
+
+Ask a question, share what you built, or suggest an idea in
+[GitHub Discussions](https://github.com/inquiryon/amp-community/discussions).
+Found a bug? Open an [issue](https://github.com/inquiryon/amp-community/issues).
+
 ## License
 
 Apache-2.0. Contributions require DCO sign-off (`git commit -s`).
