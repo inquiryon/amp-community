@@ -1,33 +1,23 @@
 # inquiryon-amp-community
 
-AMP Community Edition governance services: human-in-the-loop decision
-workflow, append-only audit history, and retryable agent-callback delivery,
-built on [`inquiryon-amp-core`](https://github.com/inquiryon/amp-core).
+AMP (Autonomous Multi-agent Platform) Community Edition governance services:
+human-in-the-loop decision workflow, append-only audit history, and
+retryable agent-callback delivery, built on
+[`inquiryon-amp-core`](https://github.com/inquiryon/amp-core).
 
 ## Get Started
 
 ### Installation
 
-**Not yet published to PyPI** — `inquiryon-amp-core` and
-`inquiryon-amp-community` must be installed from a local clone for now.
-Clone both as sibling directories (`amp-community` depends on `amp-core`,
-so install it first):
-
 ```bash
-git clone https://github.com/inquiryon/amp-core.git
-git clone https://github.com/inquiryon/amp-community.git
-
 # Optional but recommended — keeps this off your system/global Python.
-# Skip if you already have your own environment set up.
 python3 -m venv .venv && source .venv/bin/activate
 
-# amp-core first — amp-community depends on it
-pip install -e ./amp-core
-pip install -e ./amp-community
+pip install inquiryon-amp-community   # pulls in inquiryon-amp-core
 ```
 
-Once published, this collapses to
-`pip install inquiryon-amp-core inquiryon-amp-community`. Everything below
+The walkthrough below uses the example config in this repo, so clone it too:
+`git clone https://github.com/inquiryon/amp-community.git`. Everything below
 assumes this step is already done.
 
 **AMP is installed — what's next?** Continue to **"Run the AMP Service"**

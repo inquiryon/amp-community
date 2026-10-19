@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "inquiryon-amp-community"
-version = "0.0.1"
+version = "0.1.0"
 description = "AMP Community Edition: HITL workflow, append-only audit, callback delivery (experimental v0)"
 readme = "README.md"
 license = {text = "Apache-2.0"}
@@ -17,7 +17,7 @@ requires-python = ">=3.10"
 # (schema_version), and pattern constraints go unenforced with no warning.
 # That degraded mode is unacceptable for a service whose job is to reject
 # malformed/out-of-version documents (OSS-006 contract-audit finding).
-dependencies = ["inquiryon-amp-core", "jsonschema>=4.0"]
+dependencies = ["inquiryon-amp-core>=0.1.0", "jsonschema>=4.0"]
 
 [project.optional-dependencies]
 dev = ["pytest>=7"]
