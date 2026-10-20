@@ -5,7 +5,17 @@ human-in-the-loop decision workflow, append-only audit history, and
 retryable agent-callback delivery, built on
 [`inquiryon-amp-core`](https://github.com/inquiryon/amp-core).
 
-## Get Started
+## Quick Start
+
+![AMP Community operator UI: a pending agent action waiting for human approval](docs/approval-screen.jpg)
+
+*An agent's action waits in the operator UI until a human approves or rejects it.*
+
+1. **Install:** `pip install inquiryon-amp-community`
+2. **Run the service:** start it with the example config (REST API plus operator UI at `http://127.0.0.1:8080/`)
+3. **See it work:** run the curl walkthrough under [Verify it's working](#verify-its-working), then approve the request in the UI
+
+The full steps follow.
 
 ### Installation
 
